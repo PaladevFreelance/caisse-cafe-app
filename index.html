@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caisse - Gestion des Boissons</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-indigo-900 mb-8 text-center">
+            🥤 Caisse - Gestion des Boissons
+        </h1>
+
+        <div class="flex gap-4 mb-6">
+            <button id="btnOrder" class="flex-1 py-3 rounded-lg font-semibold transition bg-indigo-600 text-white">
+                🛒 Nouvelle Commande
+            </button>
+            <button id="btnHistory" class="flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50">
+                🕐 Historique (<span id="historyCount">0</span>)
+            </button>
+        </div>
+
+        <div id="orderView" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-800">Mes Boissons</h2>
+                    <button id="btnShowAdd" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                        ➕ Ajouter
+                    </button>
+                </div>
+
+                <div id="addDrinkForm" class="mb-6 p-4 bg-indigo-50 rounded-lg hidden">
+                    <input type="text" id="drinkName" placeholder="Nom de la boisson" class="w-full px-3 py-2 border border-indigo-200 rounded-lg mb-2">
+                    <input type="number" id="drinkPrice" step="0.01" placeholder="Prix (€)" class="w-full px-3 py-2 border border-indigo-200 rounded-lg mb-2">
+                    <button id="btnAddDrink" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                        Confirmer
+                    </button>
+                </div>
+
+                <div id="drinksList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-800">🛒 Commande en cours</h2>
+                    <button id="btnClearCart" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition text-sm hidden">
+                        Vider
+                    </button>
+                </div>
+
+                <div id="emptyCart" class="text-center py-12 text-gray-400">
+                    <div style="font-size: 64px; opacity: 0.3; margin-bottom: 16px">🛒</div>
+                    <p>Aucun article dans la commande</p>
+                </div>
+
+                <div id="cartContent" class="hidden">
+                    <div id="cartItems" class="space-y-2 mb-6 max-h-48 overflow-y-auto"></div>
+
+                    <div class="border-t-2 border-gray-200 pt-4">
+                        <div class="flex justify-between items-center mb-4 text-2xl font-bold">
+                            <span>Total</span>
+                            <span id="totalAmount" class="text-indigo-600">0.00 €</span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-semibold mb-2">💰 Montant payé</label>
+                            <input type="number" id="amountPaid" step="0.01" placeholder="0.00" class="w-full px-4 py-3 text-xl border-2 border-indigo-200 rounded-lg">
+                        </div>
+
+                        <div id="changeAmount" class="hidden p-4 rounded-lg text-center text-xl font-bold mb-4"></div>
+
+                        <button id="btnValidate" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold hidden">
+                            ✅ Valider la commande
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="historyView" class="bg-white rounded-xl shadow-lg p-6 hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-gray-800">Historique des commandes</h2>
+                <div id="totalSales" class="text-right hidden">
+                    <p class="text-sm text-gray-600">Total des ventes</p>
+                    <p class="text-2xl font-bold text-green-600"><span id="totalSalesAmount">0.00</span> €</p>
+                </div>
+            </div>
+
+            <div id="emptyHistory" class="text-center py-12 text-gray-400">
+                <div style="font-size: 64px; opacity: 0.3; margin-bottom: 16px">🕐</div>
+                <p>Aucune commande enregistrée pour le moment</p>
+                <p class="text-sm mt-2">Les commandes validées apparaîtront ici</p>
+            </div>
+
+            <div id="historyList" class="space-y-4 max-h-[600px] overflow-y-auto hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // Charger les données depuis localStorage ou utiliser les valeurs par défaut
+        let drinks = JSON.parse(localStorage.getItem('drinks')) || [
+            { id: 1, name: 'Coca-Cola', price: 2.50 },
+            { id: 2, name: 'Eau', price: 1.50 },
+            { id: 3, name: "Jus d'orange", price: 3.00 }
+        ];
+        let cart = [];
+        let orderHistory = JSON.parse(localStorage.getItem('orderHistory')) || [];
+
+        // Sauvegarder dans localStorage
+        function saveData() {
+            localStorage.setItem('drinks', JSON.stringify(drinks));
+            localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
+        }
+
+        function formatPrice(price) {
+            return price.toFixed(2) + ' €';
+        }
+
+        function calculateTotal() {
+            return cart.reduce((sum, item) => sum + item.price, 0);
+        }
+
+        function calculateTotalSales() {
+            return orderHistory.reduce((sum, order) => sum + order.total, 0);
+        }
+
+        function renderDrinks() {
+            const list = document.getElementById('drinksList');
+            list.innerHTML = drinks.map(drink => `
+                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800">${drink.name}</p>
+                        <p class="text-indigo-600 font-bold">${formatPrice(drink.price)}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="addToCart(${drink.id})" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                            Ajouter
+                        </button>
+                        <button onclick="removeDrink(${drink.id})" class="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderCart() {
+            const total = calculateTotal();
+            const emptyCart = document.getElementById('emptyCart');
+            const cartContent = document.getElementById('cartContent');
+            const btnClearCart = document.getElementById('btnClearCart');
+
+            if (cart.length === 0) {
+                emptyCart.classList.remove('hidden');
+                cartContent.classList.add('hidden');
+                btnClearCart.classList.add('hidden');
+                return;
+            }
+
+            emptyCart.classList.add('hidden');
+            cartContent.classList.remove('hidden');
+            btnClearCart.classList.remove('hidden');
+
+            const cartItems = document.getElementById('cartItems');
+            cartItems.innerHTML = cart.map(item => `
+                <div class="flex justify-between items-center p-3 bg-indigo-50 rounded-lg">
+                    <span class="font-medium text-gray-800">${item.name}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-indigo-600">${formatPrice(item.price)}</span>
+                        <button onclick="removeFromCart(${item.cartId})" class="text-red-500 hover:text-red-700 transition">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('totalAmount').textContent = formatPrice(total);
+            updatePayment();
+        }
+
+        function updatePayment() {
+            const total = calculateTotal();
+            const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
+            const change = paid - total;
+            const changeDiv = document.getElementById('changeAmount');
+            const btnValidate = document.getElementById('btnValidate');
+
+            if (paid > 0) {
+                changeDiv.classList.remove('hidden');
+                if (change >= 0) {
+                    changeDiv.className = 'p-4 rounded-lg text-center text-xl font-bold mb-4 bg-green-100 text-green-800';
+                    changeDiv.textContent = 'À rendre : ' + formatPrice(change);
+                } else {
+                    changeDiv.className = 'p-4 rounded-lg text-center text-xl font-bold mb-4 bg-red-100 text-red-800';
+                    changeDiv.textContent = 'Manque : ' + formatPrice(Math.abs(change));
+                }
+            } else {
+                changeDiv.classList.add('hidden');
+            }
+
+            if (paid >= total && cart.length > 0) {
+                btnValidate.classList.remove('hidden');
+            } else {
+                btnValidate.classList.add('hidden');
+            }
+        }
+
+        function renderHistory() {
+            document.getElementById('historyCount').textContent = orderHistory.length;
+            
+            const emptyHistory = document.getElementById('emptyHistory');
+            const historyList = document.getElementById('historyList');
+            const totalSales = document.getElementById('totalSales');
+
+            if (orderHistory.length === 0) {
+                emptyHistory.classList.remove('hidden');
+                historyList.classList.add('hidden');
+                totalSales.classList.add('hidden');
+                return;
+            }
+
+            emptyHistory.classList.add('hidden');
+            historyList.classList.remove('hidden');
+            totalSales.classList.remove('hidden');
+
+            document.getElementById('totalSalesAmount').textContent = formatPrice(calculateTotalSales());
+
+            historyList.innerHTML = orderHistory.map(order => `
+                <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <p class="text-sm text-gray-500">${order.date}</p>
+                            <p class="text-xs text-gray-400">Commande #${order.id}</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <p class="text-2xl font-bold text-indigo-600">${formatPrice(order.total)}</p>
+                            <button onclick="deleteOrder(${order.id})" class="text-red-500 hover:text-red-700 transition p-2" title="Supprimer">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-1 mb-3">
+                        ${order.items.map(item => `
+                            <div class="flex justify-between text-sm bg-gray-50 p-2 rounded">
+                                <span class="text-gray-700">${item.name}</span>
+                                <span class="font-semibold text-gray-800">${formatPrice(item.price)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="border-t pt-2 text-sm space-y-1">
+                        <div class="flex justify-between text-gray-600">
+                            <span>Payé :</span>
+                            <span class="font-semibold">${formatPrice(order.paid)}</span>
+                        </div>
+                        <div class="flex justify-between text-green-600">
+                            <span>Rendu :</span>
+                            <span class="font-semibold">${formatPrice(order.change)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(drinkId) {
+            const drink = drinks.find(d => d.id === drinkId);
+            if (drink) {
+                cart.push({ ...drink, cartId: Date.now() });
+                renderCart();
+            }
+        }
+
+        function removeFromCart(cartId) {
+            cart = cart.filter(item => item.cartId !== cartId);
+            renderCart();
+        }
+
+        function removeDrink(drinkId) {
+            drinks = drinks.filter(d => d.id !== drinkId);
+            saveData();
+            renderDrinks();
+        }
+
+        function clearCart() {
+            cart = [];
+            document.getElementById('amountPaid').value = '';
+            renderCart();
+        }
+
+        function validateOrder() {
+            const total = calculateTotal();
+            const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
+            const change = paid - total;
+
+            if (cart.length > 0 && paid >= total) {
+                const order = {
+                    id: Date.now(),
+                    items: [...cart],
+                    total: total,
+                    paid: paid,
+                    change: change,
+                    date: new Date().toLocaleString('fr-FR')
+                };
+                orderHistory.unshift(order);
+                saveData();
+                clearCart();
+                renderHistory();
+                alert('Commande validée ! ✅');
+            }
+        }
+
+        function deleteOrder(orderId) {
+            if (confirm('Voulez-vous vraiment supprimer cette commande ?')) {
+                orderHistory = orderHistory.filter(o => o.id !== orderId);
+                saveData();
+                renderHistory();
+            }
+        }
+
+        function showOrderView() {
+            document.getElementById('orderView').classList.remove('hidden');
+            document.getElementById('historyView').classList.add('hidden');
+            document.getElementById('btnOrder').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-indigo-600 text-white';
+            document.getElementById('btnHistory').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
+        }
+
+        function showHistoryView() {
+            document.getElementById('orderView').classList.add('hidden');
+            document.getElementById('historyView').classList.remove('hidden');
+            document.getElementById('btnOrder').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
+            document.getElementById('btnHistory').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-indigo-600 text-white';
+            renderHistory();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('btnOrder').addEventListener('click', showOrderView);
+            document.getElementById('btnHistory').addEventListener('click', showHistoryView);
+            
+            document.getElementById('btnShowAdd').addEventListener('click', function() {
+                const form = document.getElementById('addDrinkForm');
+                form.classList.toggle('hidden');
+            });
+
+            document.getElementById('btnAddDrink').addEventListener('click', function() {
+                const name = document.getElementById('drinkName').value.trim();
+                const price = parseFloat(document.getElementById('drinkPrice').value);
+                
+                if (name && price > 0) {
+                    drinks.push({
+                        id: Date.now(),
+                        name: name,
+                        price: price
+                    });
+                    document.getElementById('drinkName').value = '';
+                    document.getElementById('drinkPrice').value = '';
+                    document.getElementById('addDrinkForm').classList.add('hidden');
+                    saveData();
+                    renderDrinks();
+                }
+            });
+
+            document.getElementById('btnClearCart').addEventListener('click', clearCart);
+            document.getElementById('btnValidate').addEventListener('click', validateOrder);
+            document.getElementById('amountPaid').addEventListener('input', updatePayment);
+
+            renderDrinks();
+            renderCart();
+            renderHistory();
+        });
+    </script>
+</body>
+</html>
