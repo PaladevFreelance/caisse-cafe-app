@@ -3,17 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simply Caisse</title>
+    <title>Caisse - Gestion des Boissons</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; }
         .hidden { display: none !important; }
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .collapsible-content.active {
+            max-height: 2000px;
+            transition: max-height 0.5s ease-in;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6">
     <div class="max-w-6xl mx-auto">
         <h1 class="text-4xl font-bold text-indigo-900 mb-8 text-center">
-            🥤 Simply Caisse
+            🥤 Caisse - Gestion des Boissons
         </h1>
 
         <div class="flex gap-4 mb-6">
@@ -23,8 +32,12 @@
             <button id="btnHistory" class="flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50">
                 🕐 Historique (<span id="historyCount">0</span>)
             </button>
+            <button id="btnStats" class="flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50">
+                📊 Statistiques
+            </button>
         </div>
 
+        <!-- Vue Nouvelle Commande -->
         <div id="orderView" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex justify-between items-center mb-6">
@@ -82,6 +95,7 @@
             </div>
         </div>
 
+        <!-- Vue Historique -->
         <div id="historyView" class="bg-white rounded-xl shadow-lg p-6 hidden">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-semibold text-gray-800">Historique des commandes</h2>
@@ -99,10 +113,52 @@
 
             <div id="historyList" class="space-y-4 max-h-[600px] overflow-y-auto hidden"></div>
         </div>
+
+        <!-- Vue Statistiques -->
+        <div id="statsView" class="bg-white rounded-xl shadow-lg p-6 hidden">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">📊 Statistiques des ventes</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Date de début</label>
+                    <input type="date" id="statsStartDate" class="w-full px-3 py-2 border-2 border-indigo-200 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Date de fin</label>
+                    <input type="date" id="statsEndDate" class="w-full px-3 py-2 border-2 border-indigo-200 rounded-lg">
+                </div>
+            </div>
+
+            <button id="btnCalculateStats" class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-semibold mb-6">
+                Calculer les statistiques
+            </button>
+
+            <div id="statsResults" class="hidden">
+                <div class="bg-indigo-50 p-4 rounded-lg mb-6">
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <p class="text-sm text-gray-600">Nombre de commandes</p>
+                            <p class="text-3xl font-bold text-indigo-600" id="statsOrderCount">0</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Chiffre d'affaires</p>
+                            <p class="text-3xl font-bold text-green-600" id="statsRevenue">0.00 €</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Ventes par boisson</h3>
+                <div id="statsDrinksList" class="space-y-2"></div>
+            </div>
+
+            <div id="statsEmpty" class="text-center py-12 text-gray-400">
+                <div style="font-size: 64px; opacity: 0.3; margin-bottom: 16px">📊</div>
+                <p>Sélectionnez une période pour voir les statistiques</p>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Charger les données depuis localStorage ou utiliser les valeurs par défaut
         let drinks = JSON.parse(localStorage.getItem('drinks')) || [
             { id: 1, name: 'Coca-Cola', price: 2.50 },
             { id: 2, name: 'Eau', price: 1.50 },
@@ -111,7 +167,6 @@
         let cart = [];
         let orderHistory = JSON.parse(localStorage.getItem('orderHistory')) || [];
 
-        // Sauvegarder dans localStorage
         function saveData() {
             localStorage.setItem('drinks', JSON.stringify(drinks));
             localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
@@ -127,6 +182,45 @@
 
         function calculateTotalSales() {
             return orderHistory.reduce((sum, order) => sum + order.total, 0);
+        }
+
+        function getDateKey(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fr-FR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        function groupOrdersByDay() {
+            const grouped = {};
+            orderHistory.forEach(order => {
+                const dateKey = getDateKey(order.date);
+                if (!grouped[dateKey]) {
+                    grouped[dateKey] = {
+                        orders: [],
+                        total: 0
+                    };
+                }
+                grouped[dateKey].orders.push(order);
+                grouped[dateKey].total += order.total;
+            });
+            return grouped;
+        }
+
+        function toggleDay(dateKey) {
+            const content = document.getElementById(`day-${dateKey.replace(/\s/g, '-')}`);
+            const arrow = document.getElementById(`arrow-${dateKey.replace(/\s/g, '-')}`);
+            
+            if (content.classList.contains('active')) {
+                content.classList.remove('active');
+                arrow.textContent = '▶';
+            } else {
+                content.classList.add('active');
+                arrow.textContent = '▼';
+            }
         }
 
         function renderDrinks() {
@@ -230,37 +324,130 @@
 
             document.getElementById('totalSalesAmount').textContent = formatPrice(calculateTotalSales());
 
-            historyList.innerHTML = orderHistory.map(order => `
-                <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition">
-                    <div class="flex justify-between items-start mb-3">
-                        <div>
-                            <p class="text-sm text-gray-500">${order.date}</p>
-                            <p class="text-xs text-gray-400">Commande #${order.id}</p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <p class="text-2xl font-bold text-indigo-600">${formatPrice(order.total)}</p>
-                            <button onclick="deleteOrder(${order.id})" class="text-red-500 hover:text-red-700 transition p-2" title="Supprimer">
-                                🗑️
-                            </button>
-                        </div>
-                    </div>
-                    <div class="space-y-1 mb-3">
-                        ${order.items.map(item => `
-                            <div class="flex justify-between text-sm bg-gray-50 p-2 rounded">
-                                <span class="text-gray-700">${item.name}</span>
-                                <span class="font-semibold text-gray-800">${formatPrice(item.price)}</span>
+            const groupedOrders = groupOrdersByDay();
+            
+            historyList.innerHTML = Object.entries(groupedOrders).map(([dateKey, data]) => {
+                const safeDateKey = dateKey.replace(/\s/g, '-');
+                return `
+                    <div class="border-2 border-gray-200 rounded-lg overflow-hidden">
+                        <button onclick="toggleDay('${dateKey}')" class="w-full p-4 bg-indigo-50 hover:bg-indigo-100 transition flex justify-between items-center">
+                            <div class="flex items-center gap-3">
+                                <span id="arrow-${safeDateKey}" class="text-indigo-600 font-bold">▶</span>
+                                <div class="text-left">
+                                    <p class="font-semibold text-gray-800">${dateKey}</p>
+                                    <p class="text-sm text-gray-600">${data.orders.length} commande(s)</p>
+                                </div>
                             </div>
-                        `).join('')}
+                            <p class="text-xl font-bold text-indigo-600">${formatPrice(data.total)}</p>
+                        </button>
+                        
+                        <div id="day-${safeDateKey}" class="collapsible-content">
+                            <div class="p-4 space-y-3 bg-white">
+                                ${data.orders.map(order => `
+                                    <div class="border border-gray-200 rounded-lg p-3">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <div>
+                                                <p class="text-sm text-gray-500">${order.date.split(',')[1]}</p>
+                                                <p class="text-xs text-gray-400">Commande #${order.id}</p>
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <p class="text-lg font-bold text-indigo-600">${formatPrice(order.total)}</p>
+                                                <button onclick="deleteOrder(${order.id})" class="text-red-500 hover:text-red-700 transition p-1" title="Supprimer">
+                                                    🗑️
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="space-y-1 mb-2">
+                                            ${order.items.map(item => `
+                                                <div class="flex justify-between text-sm bg-gray-50 p-2 rounded">
+                                                    <span class="text-gray-700">${item.name}</span>
+                                                    <span class="font-semibold text-gray-800">${formatPrice(item.price)}</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+
+                                        <div class="border-t pt-2 text-sm space-y-1">
+                                            <div class="flex justify-between text-gray-600">
+                                                <span>Payé :</span>
+                                                <span class="font-semibold">${formatPrice(order.paid)}</span>
+                                            </div>
+                                            <div class="flex justify-between text-green-600">
+                                                <span>Rendu :</span>
+                                                <span class="font-semibold">${formatPrice(order.change)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
                     </div>
-                    <div class="border-t pt-2 text-sm space-y-1">
-                        <div class="flex justify-between text-gray-600">
-                            <span>Payé :</span>
-                            <span class="font-semibold">${formatPrice(order.paid)}</span>
-                        </div>
-                        <div class="flex justify-between text-green-600">
-                            <span>Rendu :</span>
-                            <span class="font-semibold">${formatPrice(order.change)}</span>
-                        </div>
+                `;
+            }).join('');
+        }
+
+        function calculateStats() {
+            const startDate = document.getElementById('statsStartDate').value;
+            const endDate = document.getElementById('statsEndDate').value;
+
+            if (!startDate || !endDate) {
+                alert('Veuillez sélectionner une date de début et de fin');
+                return;
+            }
+
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+
+            const filteredOrders = orderHistory.filter(order => {
+                const orderDate = new Date(order.date.split(',')[0].split('/').reverse().join('-'));
+                return orderDate >= start && orderDate <= end;
+            });
+
+            if (filteredOrders.length === 0) {
+                document.getElementById('statsResults').classList.add('hidden');
+                document.getElementById('statsEmpty').classList.remove('hidden');
+                document.getElementById('statsEmpty').innerHTML = `
+                    <div style="font-size: 64px; opacity: 0.3; margin-bottom: 16px">📊</div>
+                    <p>Aucune commande trouvée pour cette période</p>
+                `;
+                return;
+            }
+
+            const drinkStats = {};
+            let totalRevenue = 0;
+
+            filteredOrders.forEach(order => {
+                totalRevenue += order.total;
+                order.items.forEach(item => {
+                    if (!drinkStats[item.name]) {
+                        drinkStats[item.name] = {
+                            count: 0,
+                            revenue: 0
+                        };
+                    }
+                    drinkStats[item.name].count++;
+                    drinkStats[item.name].revenue += item.price;
+                });
+            });
+
+            document.getElementById('statsEmpty').classList.add('hidden');
+            document.getElementById('statsResults').classList.remove('hidden');
+            document.getElementById('statsOrderCount').textContent = filteredOrders.length;
+            document.getElementById('statsRevenue').textContent = formatPrice(totalRevenue);
+
+            const sortedDrinks = Object.entries(drinkStats).sort((a, b) => b[1].count - a[1].count);
+
+            document.getElementById('statsDrinksList').innerHTML = sortedDrinks.map(([name, stats]) => `
+                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800">${name}</p>
+                        <p class="text-sm text-gray-600">Chiffre d'affaires : ${formatPrice(stats.revenue)}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-3xl font-bold text-indigo-600">${stats.count}</p>
+                        <p class="text-xs text-gray-500">vente(s)</p>
                     </div>
                 </div>
             `).join('');
@@ -327,21 +514,40 @@
         function showOrderView() {
             document.getElementById('orderView').classList.remove('hidden');
             document.getElementById('historyView').classList.add('hidden');
+            document.getElementById('statsView').classList.add('hidden');
             document.getElementById('btnOrder').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-indigo-600 text-white';
             document.getElementById('btnHistory').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
+            document.getElementById('btnStats').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
         }
 
         function showHistoryView() {
             document.getElementById('orderView').classList.add('hidden');
             document.getElementById('historyView').classList.remove('hidden');
+            document.getElementById('statsView').classList.add('hidden');
             document.getElementById('btnOrder').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
             document.getElementById('btnHistory').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-indigo-600 text-white';
+            document.getElementById('btnStats').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
             renderHistory();
+        }
+
+        function showStatsView() {
+            document.getElementById('orderView').classList.add('hidden');
+            document.getElementById('historyView').classList.add('hidden');
+            document.getElementById('statsView').classList.remove('hidden');
+            document.getElementById('btnOrder').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
+            document.getElementById('btnHistory').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
+            document.getElementById('btnStats').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-indigo-600 text-white';
+            
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            document.getElementById('statsStartDate').value = todayStr;
+            document.getElementById('statsEndDate').value = todayStr;
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('btnOrder').addEventListener('click', showOrderView);
             document.getElementById('btnHistory').addEventListener('click', showHistoryView);
+            document.getElementById('btnStats').addEventListener('click', showStatsView);
             
             document.getElementById('btnShowAdd').addEventListener('click', function() {
                 const form = document.getElementById('addDrinkForm');
@@ -369,6 +575,7 @@
             document.getElementById('btnClearCart').addEventListener('click', clearCart);
             document.getElementById('btnValidate').addEventListener('click', validateOrder);
             document.getElementById('amountPaid').addEventListener('input', updatePayment);
+            document.getElementById('btnCalculateStats').addEventListener('click', calculateStats);
 
             renderDrinks();
             renderCart();
