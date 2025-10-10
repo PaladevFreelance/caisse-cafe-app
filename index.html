@@ -395,15 +395,28 @@
                 return;
             }
 
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(endDate);
-            end.setHours(23, 59, 59, 999);
+            // Dates de début et fin avec heures réinitialisées
+            const start = new Date(startDate + 'T00:00:00');
+            const end = new Date(endDate + 'T23:59:59');
+
+            console.log('Période recherchée:', start, 'à', end);
+            console.log('Nombre total de commandes:', orderHistory.length);
 
             const filteredOrders = orderHistory.filter(order => {
-                const orderDate = new Date(order.date.split(',')[0].split('/').reverse().join('-'));
+                // Parser la date - peut être "10/10/2025, 14:30:25" ou "10/10/2025 14:30:25"
+                const dateStr = order.date.split(' ')[0]; // Prend juste la partie date "10/10/2025"
+                const parts = dateStr.split('/'); // ["10", "10", "2025"]
+                
+                // Créer la date : année, mois (0-indexé), jour
+                const orderDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                
+                console.log('Commande date:', order.date, '→', orderDate);
+                console.log('Dans la période?', orderDate >= start && orderDate <= end);
+                
                 return orderDate >= start && orderDate <= end;
             });
+
+            console.log('Commandes filtrées:', filteredOrders.length);
 
             if (filteredOrders.length === 0) {
                 document.getElementById('statsResults').classList.add('hidden');
@@ -411,6 +424,7 @@
                 document.getElementById('statsEmpty').innerHTML = `
                     <div style="font-size: 64px; opacity: 0.3; margin-bottom: 16px">📊</div>
                     <p>Aucune commande trouvée pour cette période</p>
+                    <p class="text-sm mt-2">Période : ${start.toLocaleDateString('fr-FR')} - ${end.toLocaleDateString('fr-FR')}</p>
                 `;
                 return;
             }
