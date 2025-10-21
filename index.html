@@ -25,19 +25,25 @@
             🥤 Caisse - Gestion des Boissons
         </h1>
 
-        <div class="flex gap-4 mb-6">
-            <button id="btnOrder" class="flex-1 py-3 rounded-lg font-semibold transition bg-indigo-600 text-white">
-                🛒 Nouvelle Commande
+        <div class="flex gap-2 mb-6 flex-wrap">
+            <button id="btnOrder" class="flex-1 min-w-[120px] py-3 rounded-lg font-semibold transition bg-indigo-600 text-white text-sm">
+                🛒 Commande
             </button>
-            <button id="btnHistory" class="flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50">
+            <button id="btnHistory" class="flex-1 min-w-[120px] py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50 text-sm">
                 🕐 Historique (<span id="historyCount">0</span>)
             </button>
-            <button id="btnStats" class="flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50">
-                📊 Statistiques
+            <button id="btnStats" class="flex-1 min-w-[120px] py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50 text-sm">
+                📊 Stats
+            </button>
+            <button id="btnStock" class="flex-1 min-w-[120px] py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50 text-sm">
+                📦 Stocks
+            </button>
+            <button id="btnChecklist" class="flex-1 min-w-[120px] py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50 text-sm">
+                ✅ Checklist
             </button>
         </div>
 
-        <!-- Vue Nouvelle Commande -->
+        <!-- Vue Commande -->
         <div id="orderView" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex justify-between items-center mb-6">
@@ -46,7 +52,6 @@
                         ➕ Ajouter
                     </button>
                 </div>
-
                 <div id="addDrinkForm" class="mb-6 p-4 bg-indigo-50 rounded-lg hidden">
                     <input type="text" id="drinkName" placeholder="Nom de la boisson" class="w-full px-3 py-2 border border-indigo-200 rounded-lg mb-2">
                     <input type="number" id="drinkPrice" step="0.01" placeholder="Prix (€)" class="w-full px-3 py-2 border border-indigo-200 rounded-lg mb-2">
@@ -54,10 +59,8 @@
                         Confirmer
                     </button>
                 </div>
-
                 <div id="drinksList" class="space-y-2 max-h-96 overflow-y-auto"></div>
             </div>
-
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-semibold text-gray-800">🛒 Commande en cours</h2>
@@ -65,28 +68,22 @@
                         Vider
                     </button>
                 </div>
-
                 <div id="emptyCart" class="text-center py-12 text-gray-400">
                     <div style="font-size: 64px; opacity: 0.3; margin-bottom: 16px">🛒</div>
                     <p>Aucun article dans la commande</p>
                 </div>
-
                 <div id="cartContent" class="hidden">
                     <div id="cartItems" class="space-y-2 mb-6 max-h-48 overflow-y-auto"></div>
-
                     <div class="border-t-2 border-gray-200 pt-4">
                         <div class="flex justify-between items-center mb-4 text-2xl font-bold">
                             <span>Total</span>
                             <span id="totalAmount" class="text-indigo-600">0.00 €</span>
                         </div>
-
                         <div class="mb-4">
                             <label class="block text-gray-700 font-semibold mb-2">💰 Montant payé</label>
                             <input type="number" id="amountPaid" step="0.01" placeholder="0.00" class="w-full px-4 py-3 text-xl border-2 border-indigo-200 rounded-lg">
                         </div>
-
                         <div id="changeAmount" class="hidden p-4 rounded-lg text-center text-xl font-bold mb-4"></div>
-
                         <button id="btnValidate" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold hidden">
                             ✅ Valider la commande
                         </button>
@@ -104,20 +101,17 @@
                     <p class="text-2xl font-bold text-green-600"><span id="totalSalesAmount">0.00</span> €</p>
                 </div>
             </div>
-
             <div id="emptyHistory" class="text-center py-12 text-gray-400">
                 <div style="font-size: 64px; opacity: 0.3; margin-bottom: 16px">🕐</div>
                 <p>Aucune commande enregistrée pour le moment</p>
                 <p class="text-sm mt-2">Les commandes validées apparaîtront ici</p>
             </div>
-
             <div id="historyList" class="space-y-4 max-h-[600px] overflow-y-auto hidden"></div>
         </div>
 
         <!-- Vue Statistiques -->
         <div id="statsView" class="bg-white rounded-xl shadow-lg p-6 hidden">
             <h2 class="text-2xl font-semibold text-gray-800 mb-6">📊 Statistiques des ventes</h2>
-            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Date de début</label>
@@ -128,11 +122,9 @@
                     <input type="date" id="statsEndDate" class="w-full px-3 py-2 border-2 border-indigo-200 rounded-lg">
                 </div>
             </div>
-
             <button id="btnCalculateStats" class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-semibold mb-6">
                 Calculer les statistiques
             </button>
-
             <div id="statsResults" class="hidden">
                 <div class="bg-indigo-50 p-4 rounded-lg mb-6">
                     <div class="grid grid-cols-3 gap-4 text-center">
@@ -150,14 +142,63 @@
                         </div>
                     </div>
                 </div>
-
                 <h3 class="text-xl font-semibold text-gray-800 mb-4">Ventes par boisson</h3>
                 <div id="statsDrinksList" class="space-y-2"></div>
             </div>
-
             <div id="statsEmpty" class="text-center py-12 text-gray-400">
                 <div style="font-size: 64px; opacity: 0.3; margin-bottom: 16px">📊</div>
                 <p>Sélectionnez une période pour voir les statistiques</p>
+            </div>
+        </div>
+
+        <!-- Vue Stocks -->
+        <div id="stockView" class="bg-white rounded-xl shadow-lg p-6 hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-gray-800">📦 Gestion des stocks</h2>
+                <button id="btnShowAddStock" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                    ➕ Ajouter
+                </button>
+            </div>
+            <div id="addStockForm" class="mb-6 p-4 bg-indigo-50 rounded-lg hidden">
+                <input type="text" id="stockName" placeholder="Nom de l'article (ex: Gobelets)" class="w-full px-3 py-2 border border-indigo-200 rounded-lg mb-2">
+                <input type="number" id="stockQuantity" placeholder="Quantité actuelle" class="w-full px-3 py-2 border border-indigo-200 rounded-lg mb-2">
+                <input type="number" id="stockAlert" placeholder="Seuil d'alerte" class="w-full px-3 py-2 border border-indigo-200 rounded-lg mb-2">
+                <button id="btnAddStock" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                    Confirmer
+                </button>
+            </div>
+            <div id="stocksList" class="space-y-3"></div>
+            <div id="emptyStock" class="text-center py-12 text-gray-400">
+                <div style="font-size: 64px; opacity: 0.3; margin-bottom: 16px">📦</div>
+                <p>Aucun article en stock</p>
+                <p class="text-sm mt-2">Ajoutez vos articles pour commencer</p>
+            </div>
+        </div>
+
+        <!-- Vue Checklist -->
+        <div id="checklistView" class="bg-white rounded-xl shadow-lg p-6 hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-gray-800">✅ Checklist événement</h2>
+                <div class="flex gap-2">
+                    <button id="btnResetChecklist" class="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition text-sm">
+                        🔄 Réinitialiser
+                    </button>
+                    <button id="btnShowAddChecklistItem" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                        ➕ Ajouter
+                    </button>
+                </div>
+            </div>
+            <div id="addChecklistForm" class="mb-6 p-4 bg-indigo-50 rounded-lg hidden">
+                <input type="text" id="checklistItemName" placeholder="Nom de l'article (ex: Machine à café)" class="w-full px-3 py-2 border border-indigo-200 rounded-lg mb-2">
+                <button id="btnAddChecklistItem" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                    Confirmer
+                </button>
+            </div>
+            <div id="checklistItems" class="space-y-2"></div>
+            <div id="emptyChecklist" class="text-center py-12 text-gray-400">
+                <div style="font-size: 64px; opacity: 0.3; margin-bottom: 16px">✅</div>
+                <p>Aucun élément dans la checklist</p>
+                <p class="text-sm mt-2">Ajoutez des éléments à vérifier</p>
             </div>
         </div>
     </div>
@@ -170,10 +211,14 @@
         ];
         let cart = [];
         let orderHistory = JSON.parse(localStorage.getItem('orderHistory')) || [];
+        let stockItems = JSON.parse(localStorage.getItem('stockItems')) || [];
+        let checklistItems = JSON.parse(localStorage.getItem('checklistItems')) || [];
 
         function saveData() {
             localStorage.setItem('drinks', JSON.stringify(drinks));
             localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
+            localStorage.setItem('stockItems', JSON.stringify(stockItems));
+            localStorage.setItem('checklistItems', JSON.stringify(checklistItems));
         }
 
         function formatPrice(price) {
@@ -189,19 +234,10 @@
         }
 
         function getDateKey(dateString) {
-            // Parser la date - format "10/10/2025 21:04:13" ou "10/10/2025, 21:04:13"
-            const dateStr = dateString.split(' ')[0]; // Prend juste "10/10/2025"
-            const parts = dateStr.split('/'); // ["10", "10", "2025"]
-            
-            // Créer la date : année, mois (0-indexé), jour
+            const dateStr = dateString.split(' ')[0];
+            const parts = dateStr.split('/');
             const date = new Date(parts[2], parts[1] - 1, parts[0]);
-            
-            return date.toLocaleDateString('fr-FR', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
+            return date.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         }
 
         function groupOrdersByDay() {
@@ -209,10 +245,7 @@
             orderHistory.forEach(order => {
                 const dateKey = getDateKey(order.date);
                 if (!grouped[dateKey]) {
-                    grouped[dateKey] = {
-                        orders: [],
-                        total: 0
-                    };
+                    grouped[dateKey] = { orders: [], total: 0 };
                 }
                 grouped[dateKey].orders.push(order);
                 grouped[dateKey].total += order.total;
@@ -221,9 +254,9 @@
         }
 
         function toggleDay(dateKey) {
-            const content = document.getElementById(`day-${dateKey.replace(/\s/g, '-')}`);
-            const arrow = document.getElementById(`arrow-${dateKey.replace(/\s/g, '-')}`);
-            
+            const safeDateKey = dateKey.replace(/\s/g, '-');
+            const content = document.getElementById('day-' + safeDateKey);
+            const arrow = document.getElementById('arrow-' + safeDateKey);
             if (content.classList.contains('active')) {
                 content.classList.remove('active');
                 arrow.textContent = '▶';
@@ -242,12 +275,8 @@
                         <p class="text-indigo-600 font-bold">${formatPrice(drink.price)}</p>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="addToCart(${drink.id})" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-                            Ajouter
-                        </button>
-                        <button onclick="removeDrink(${drink.id})" class="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition">
-                            🗑️
-                        </button>
+                        <button onclick="addToCart(${drink.id})" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Ajouter</button>
+                        <button onclick="removeDrink(${drink.id})" class="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition">🗑️</button>
                     </div>
                 </div>
             `).join('');
@@ -258,31 +287,25 @@
             const emptyCart = document.getElementById('emptyCart');
             const cartContent = document.getElementById('cartContent');
             const btnClearCart = document.getElementById('btnClearCart');
-
             if (cart.length === 0) {
                 emptyCart.classList.remove('hidden');
                 cartContent.classList.add('hidden');
                 btnClearCart.classList.add('hidden');
                 return;
             }
-
             emptyCart.classList.add('hidden');
             cartContent.classList.remove('hidden');
             btnClearCart.classList.remove('hidden');
-
             const cartItems = document.getElementById('cartItems');
             cartItems.innerHTML = cart.map(item => `
                 <div class="flex justify-between items-center p-3 bg-indigo-50 rounded-lg">
                     <span class="font-medium text-gray-800">${item.name}</span>
                     <div class="flex items-center gap-3">
                         <span class="font-bold text-indigo-600">${formatPrice(item.price)}</span>
-                        <button onclick="removeFromCart(${item.cartId})" class="text-red-500 hover:text-red-700 transition">
-                            🗑️
-                        </button>
+                        <button onclick="removeFromCart(${item.cartId})" class="text-red-500 hover:text-red-700 transition">🗑️</button>
                     </div>
                 </div>
             `).join('');
-
             document.getElementById('totalAmount').textContent = formatPrice(total);
             updatePayment();
         }
@@ -293,7 +316,6 @@
             const change = paid - total;
             const changeDiv = document.getElementById('changeAmount');
             const btnValidate = document.getElementById('btnValidate');
-
             if (paid > 0) {
                 changeDiv.classList.remove('hidden');
                 if (change >= 0) {
@@ -306,7 +328,6 @@
             } else {
                 changeDiv.classList.add('hidden');
             }
-
             if (paid >= total && cart.length > 0) {
                 btnValidate.classList.remove('hidden');
             } else {
@@ -316,26 +337,20 @@
 
         function renderHistory() {
             document.getElementById('historyCount').textContent = orderHistory.length;
-            
             const emptyHistory = document.getElementById('emptyHistory');
             const historyList = document.getElementById('historyList');
             const totalSales = document.getElementById('totalSales');
-
             if (orderHistory.length === 0) {
                 emptyHistory.classList.remove('hidden');
                 historyList.classList.add('hidden');
                 totalSales.classList.add('hidden');
                 return;
             }
-
             emptyHistory.classList.add('hidden');
             historyList.classList.remove('hidden');
             totalSales.classList.remove('hidden');
-
             document.getElementById('totalSalesAmount').textContent = formatPrice(calculateTotalSales());
-
             const groupedOrders = groupOrdersByDay();
-            
             historyList.innerHTML = Object.entries(groupedOrders).map(([dateKey, data]) => {
                 const safeDateKey = dateKey.replace(/\s/g, '-');
                 return `
@@ -350,9 +365,9 @@
                             </div>
                             <p class="text-xl font-bold text-indigo-600">${formatPrice(data.total)}</p>
                         </button>
-                        
                         <div id="day-${safeDateKey}" class="collapsible-content">
-                            <div class="p-4 space-y-3 bg-white max-h-96 overflow-y-auto">${data.orders.map(order => `
+                            <div class="p-4 space-y-3 bg-white max-h-96 overflow-y-auto">
+                                ${data.orders.map(order => `
                                     <div class="border border-gray-200 rounded-lg p-3">
                                         <div class="flex justify-between items-start mb-2">
                                             <div>
@@ -361,12 +376,9 @@
                                             </div>
                                             <div class="flex items-center gap-3">
                                                 <p class="text-lg font-bold text-indigo-600">${formatPrice(order.total)}</p>
-                                                <button onclick="deleteOrder(${order.id})" class="text-red-500 hover:text-red-700 transition p-1" title="Supprimer">
-                                                    🗑️
-                                                </button>
+                                                <button onclick="deleteOrder(${order.id})" class="text-red-500 hover:text-red-700 transition p-1">🗑️</button>
                                             </div>
                                         </div>
-                                        
                                         <div class="space-y-1 mb-2">
                                             ${order.items.map(item => `
                                                 <div class="flex justify-between text-sm bg-gray-50 p-2 rounded">
@@ -375,7 +387,6 @@
                                                 </div>
                                             `).join('')}
                                         </div>
-
                                         <div class="border-t pt-2 text-sm space-y-1">
                                             <div class="flex justify-between text-gray-600">
                                                 <span>Payé :</span>
@@ -398,23 +409,18 @@
         function calculateStats() {
             const startDate = document.getElementById('statsStartDate').value;
             const endDate = document.getElementById('statsEndDate').value;
-
             if (!startDate || !endDate) {
                 alert('Veuillez sélectionner une date de début et de fin');
                 return;
             }
-
             const start = new Date(startDate + 'T00:00:00');
             const end = new Date(endDate + 'T23:59:59');
-
             const filteredOrders = orderHistory.filter(order => {
                 const dateStr = order.date.split(' ')[0];
                 const parts = dateStr.split('/');
                 const orderDate = new Date(parts[2], parts[1] - 1, parts[0]);
-                
                 return orderDate >= start && orderDate <= end;
             });
-
             if (filteredOrders.length === 0) {
                 document.getElementById('statsResults').classList.add('hidden');
                 document.getElementById('statsEmpty').classList.remove('hidden');
@@ -425,34 +431,26 @@
                 `;
                 return;
             }
-
             const drinkStats = {};
             let totalRevenue = 0;
             let totalDrinks = 0;
-
             filteredOrders.forEach(order => {
                 totalRevenue += order.total;
                 order.items.forEach(item => {
                     totalDrinks++;
                     if (!drinkStats[item.name]) {
-                        drinkStats[item.name] = {
-                            count: 0,
-                            revenue: 0
-                        };
+                        drinkStats[item.name] = { count: 0, revenue: 0 };
                     }
                     drinkStats[item.name].count++;
                     drinkStats[item.name].revenue += item.price;
                 });
             });
-
             document.getElementById('statsEmpty').classList.add('hidden');
             document.getElementById('statsResults').classList.remove('hidden');
             document.getElementById('statsOrderCount').textContent = filteredOrders.length;
             document.getElementById('statsDrinkCount').textContent = totalDrinks;
             document.getElementById('statsRevenue').textContent = formatPrice(totalRevenue);
-
             const sortedDrinks = Object.entries(drinkStats).sort((a, b) => b[1].count - a[1].count);
-
             document.getElementById('statsDrinksList').innerHTML = sortedDrinks.map(([name, stats]) => `
                 <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                     <div class="flex-1">
@@ -463,6 +461,71 @@
                         <p class="text-3xl font-bold text-indigo-600">${stats.count}</p>
                         <p class="text-xs text-gray-500">vente(s)</p>
                     </div>
+                </div>
+            `).join('');
+        }
+
+        function renderStock() {
+            const list = document.getElementById('stocksList');
+            const empty = document.getElementById('emptyStock');
+            if (stockItems.length === 0) {
+                list.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+            list.classList.remove('hidden');
+            empty.classList.add('hidden');
+            list.innerHTML = stockItems.map(item => {
+                const percentage = (item.quantity / item.alertThreshold) * 100;
+                let statusColor = 'green';
+                let statusText = 'Stock OK';
+                if (percentage <= 50) {
+                    statusColor = 'red';
+                    statusText = 'Stock bas !';
+                } else if (percentage <= 100) {
+                    statusColor = 'orange';
+                    statusText = 'À surveiller';
+                }
+                const bgClass = statusColor === 'red' ? 'bg-red-50 border-red-300' : statusColor === 'orange' ? 'bg-orange-50 border-orange-300' : 'bg-green-50 border-green-300';
+                const textClass = statusColor === 'red' ? 'text-red-600' : statusColor === 'orange' ? 'text-orange-600' : 'text-green-600';
+                return `
+                    <div class="border-2 border-gray-200 rounded-lg p-4 ${bgClass}">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-gray-800 text-lg">${item.name}</h3>
+                                <p class="text-sm text-gray-600">Seuil d'alerte : ${item.alertThreshold}</p>
+                                <p class="text-xs font-semibold mt-1 ${textClass}">${statusText}</p>
+                            </div>
+                            <button onclick="removeStockItem(${item.id})" class="text-red-500 hover:text-red-700 transition p-2">🗑️</button>
+                        </div>
+                        <div class="flex items-center justify-between gap-4">
+                            <button onclick="adjustStock(${item.id}, -1)" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition font-bold text-xl">−</button>
+                            <div class="text-center">
+                                <p class="text-4xl font-bold text-gray-800">${item.quantity}</p>
+                                <p class="text-xs text-gray-500">en stock</p>
+                            </div>
+                            <button onclick="adjustStock(${item.id}, 1)" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition font-bold text-xl">+</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderChecklist() {
+            const list = document.getElementById('checklistItems');
+            const empty = document.getElementById('emptyChecklist');
+            if (checklistItems.length === 0) {
+                list.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+            list.classList.remove('hidden');
+            empty.classList.add('hidden');
+            list.innerHTML = checklistItems.map(item => `
+                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                    <input type="checkbox" id="check-${item.id}" ${item.checked ? 'checked' : ''} onchange="toggleChecklistItem(${item.id})" class="w-6 h-6 text-indigo-600 rounded cursor-pointer">
+                    <label for="check-${item.id}" class="flex-1 cursor-pointer ${item.checked ? 'line-through text-gray-400' : 'text-gray-800 font-medium'}">${item.name}</label>
+                    <button onclick="removeChecklistItem(${item.id})" class="text-red-500 hover:text-red-700 transition p-2">🗑️</button>
                 </div>
             `).join('');
         }
@@ -482,7 +545,7 @@
 
         function removeDrink(drinkId) {
             const drink = drinks.find(d => d.id === drinkId);
-            if (drink && confirm(`Voulez-vous vraiment supprimer "${drink.name}" de votre liste de boissons ?`)) {
+            if (drink && confirm(`Voulez-vous vraiment supprimer "${drink.name}" ?`)) {
                 drinks = drinks.filter(d => d.id !== drinkId);
                 saveData();
                 renderDrinks();
@@ -499,7 +562,6 @@
             const total = calculateTotal();
             const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
             const change = paid - total;
-
             if (cart.length > 0 && paid >= total) {
                 const order = {
                     id: Date.now(),
@@ -525,59 +587,105 @@
             }
         }
 
+        function adjustStock(itemId, delta) {
+            const item = stockItems.find(s => s.id === itemId);
+            if (item) {
+                item.quantity = Math.max(0, item.quantity + delta);
+                saveData();
+                renderStock();
+            }
+        }
+
+        function removeStockItem(itemId) {
+            if (confirm('Supprimer cet article du stock ?')) {
+                stockItems = stockItems.filter(s => s.id !== itemId);
+                saveData();
+                renderStock();
+            }
+        }
+
+        function toggleChecklistItem(itemId) {
+            const item = checklistItems.find(c => c.id === itemId);
+            if (item) {
+                item.checked = !item.checked;
+                saveData();
+                renderChecklist();
+            }
+        }
+
+        function removeChecklistItem(itemId) {
+            if (confirm('Supprimer cet élément ?')) {
+                checklistItems = checklistItems.filter(c => c.id !== itemId);
+                saveData();
+                renderChecklist();
+            }
+        }
+
+        function resetChecklist() {
+            if (confirm('Tout décocher ?')) {
+                checklistItems.forEach(item => item.checked = false);
+                saveData();
+                renderChecklist();
+            }
+        }
+
+        function showView(viewId) {
+            ['orderView', 'historyView', 'statsView', 'stockView', 'checklistView'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
+            ['btnOrder', 'btnHistory', 'btnStats', 'btnStock', 'btnChecklist'].forEach(id => {
+                document.getElementById(id).className = 'flex-1 min-w-[120px] py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50 text-sm';
+            });
+        }
+
         function showOrderView() {
-            document.getElementById('orderView').classList.remove('hidden');
-            document.getElementById('historyView').classList.add('hidden');
-            document.getElementById('statsView').classList.add('hidden');
-            document.getElementById('btnOrder').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-indigo-600 text-white';
-            document.getElementById('btnHistory').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
-            document.getElementById('btnStats').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
+            showView('orderView');
+            document.getElementById('btnOrder').className = 'flex-1 min-w-[120px] py-3 rounded-lg font-semibold transition bg-indigo-600 text-white text-sm';
         }
 
         function showHistoryView() {
-            document.getElementById('orderView').classList.add('hidden');
-            document.getElementById('historyView').classList.remove('hidden');
-            document.getElementById('statsView').classList.add('hidden');
-            document.getElementById('btnOrder').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
-            document.getElementById('btnHistory').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-indigo-600 text-white';
-            document.getElementById('btnStats').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
+            showView('historyView');
+            document.getElementById('btnHistory').className = 'flex-1 min-w-[120px] py-3 rounded-lg font-semibold transition bg-indigo-600 text-white text-sm';
             renderHistory();
         }
 
         function showStatsView() {
-            document.getElementById('orderView').classList.add('hidden');
-            document.getElementById('historyView').classList.add('hidden');
-            document.getElementById('statsView').classList.remove('hidden');
-            document.getElementById('btnOrder').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
-            document.getElementById('btnHistory').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-white text-gray-600 hover:bg-gray-50';
-            document.getElementById('btnStats').className = 'flex-1 py-3 rounded-lg font-semibold transition bg-indigo-600 text-white';
-            
-            const today = new Date();
-            const todayStr = today.toISOString().split('T')[0];
-            document.getElementById('statsStartDate').value = todayStr;
-            document.getElementById('statsEndDate').value = todayStr;
+            showView('statsView');
+            document.getElementById('btnStats').className = 'flex-1 min-w-[120px] py-3 rounded-lg font-semibold transition bg-indigo-600 text-white text-sm';
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('statsStartDate').value = today;
+            document.getElementById('statsEndDate').value = today;
+        }
+
+        function showStockView() {
+            showView('stockView');
+            document.getElementById('btnStock').className = 'flex-1 min-w-[120px] py-3 rounded-lg font-semibold transition bg-indigo-600 text-white text-sm';
+            renderStock();
+        }
+
+        function showChecklistView() {
+            showView('checklistView');
+            document.getElementById('btnChecklist').className = 'flex-1 min-w-[120px] py-3 rounded-lg font-semibold transition bg-indigo-600 text-white text-sm';
+            renderChecklist();
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('btnOrder').addEventListener('click', showOrderView);
             document.getElementById('btnHistory').addEventListener('click', showHistoryView);
             document.getElementById('btnStats').addEventListener('click', showStatsView);
+            document.getElementById('btnStock').addEventListener('click', showStockView);
+            document.getElementById('btnChecklist').addEventListener('click', showChecklistView);
             
             document.getElementById('btnShowAdd').addEventListener('click', function() {
-                const form = document.getElementById('addDrinkForm');
-                form.classList.toggle('hidden');
+                document.getElementById('addDrinkForm').classList.toggle('hidden');
             });
 
             document.getElementById('btnAddDrink').addEventListener('click', function() {
                 const name = document.getElementById('drinkName').value.trim();
                 const price = parseFloat(document.getElementById('drinkPrice').value);
-                
                 if (name && price > 0) {
-                    drinks.push({
-                        id: Date.now(),
-                        name: name,
-                        price: price
-                    });
+                    drinks.push({ id: Date.now(), name: name, price: price });
                     document.getElementById('drinkName').value = '';
                     document.getElementById('drinkPrice').value = '';
                     document.getElementById('addDrinkForm').classList.add('hidden');
@@ -586,6 +694,41 @@
                 }
             });
 
+            document.getElementById('btnShowAddStock').addEventListener('click', function() {
+                document.getElementById('addStockForm').classList.toggle('hidden');
+            });
+
+            document.getElementById('btnAddStock').addEventListener('click', function() {
+                const name = document.getElementById('stockName').value.trim();
+                const quantity = parseInt(document.getElementById('stockQuantity').value);
+                const alert = parseInt(document.getElementById('stockAlert').value);
+                if (name && quantity >= 0 && alert > 0) {
+                    stockItems.push({ id: Date.now(), name: name, quantity: quantity, alertThreshold: alert });
+                    document.getElementById('stockName').value = '';
+                    document.getElementById('stockQuantity').value = '';
+                    document.getElementById('stockAlert').value = '';
+                    document.getElementById('addStockForm').classList.add('hidden');
+                    saveData();
+                    renderStock();
+                }
+            });
+
+            document.getElementById('btnShowAddChecklistItem').addEventListener('click', function() {
+                document.getElementById('addChecklistForm').classList.toggle('hidden');
+            });
+
+            document.getElementById('btnAddChecklistItem').addEventListener('click', function() {
+                const name = document.getElementById('checklistItemName').value.trim();
+                if (name) {
+                    checklistItems.push({ id: Date.now(), name: name, checked: false });
+                    document.getElementById('checklistItemName').value = '';
+                    document.getElementById('addChecklistForm').classList.add('hidden');
+                    saveData();
+                    renderChecklist();
+                }
+            });
+
+            document.getElementById('btnResetChecklist').addEventListener('click', resetChecklist);
             document.getElementById('btnClearCart').addEventListener('click', clearCart);
             document.getElementById('btnValidate').addEventListener('click', validateOrder);
             document.getElementById('amountPaid').addEventListener('input', updatePayment);
@@ -594,6 +737,8 @@
             renderDrinks();
             renderCart();
             renderHistory();
+            renderStock();
+            renderChecklist();
         });
     </script>
 </body>
