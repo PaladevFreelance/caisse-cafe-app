@@ -135,10 +135,14 @@
 
             <div id="statsResults" class="hidden">
                 <div class="bg-indigo-50 p-4 rounded-lg mb-6">
-                    <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="grid grid-cols-3 gap-4 text-center">
                         <div>
                             <p class="text-sm text-gray-600">Nombre de commandes</p>
                             <p class="text-3xl font-bold text-indigo-600" id="statsOrderCount">0</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Boissons vendues</p>
+                            <p class="text-3xl font-bold text-purple-600" id="statsDrinkCount">0</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-600">Chiffre d'affaires</p>
@@ -185,7 +189,13 @@
         }
 
         function getDateKey(dateString) {
-            const date = new Date(dateString);
+            // Parser la date - format "10/10/2025 21:04:13" ou "10/10/2025, 21:04:13"
+            const dateStr = dateString.split(' ')[0]; // Prend juste "10/10/2025"
+            const parts = dateStr.split('/'); // ["10", "10", "2025"]
+            
+            // Créer la date : année, mois (0-indexé), jour
+            const date = new Date(parts[2], parts[1] - 1, parts[0]);
+            
             return date.toLocaleDateString('fr-FR', { 
                 weekday: 'long', 
                 year: 'numeric', 
@@ -342,12 +352,11 @@
                         </button>
                         
                         <div id="day-${safeDateKey}" class="collapsible-content">
-                            <div class="p-4 space-y-3 bg-white">
-                                ${data.orders.map(order => `
+                            <div class="p-4 space-y-3 bg-white max-h-96 overflow-y-auto">${data.orders.map(order => `
                                     <div class="border border-gray-200 rounded-lg p-3">
                                         <div class="flex justify-between items-start mb-2">
                                             <div>
-                                                <p class="text-sm text-gray-500">${order.date.split(',')[1]}</p>
+                                                <p class="text-sm text-gray-500">${order.date}</p>
                                                 <p class="text-xs text-gray-400">Commande #${order.id}</p>
                                             </div>
                                             <div class="flex items-center gap-3">
@@ -395,28 +404,16 @@
                 return;
             }
 
-            // Dates de début et fin avec heures réinitialisées
             const start = new Date(startDate + 'T00:00:00');
             const end = new Date(endDate + 'T23:59:59');
 
-            console.log('Période recherchée:', start, 'à', end);
-            console.log('Nombre total de commandes:', orderHistory.length);
-
             const filteredOrders = orderHistory.filter(order => {
-                // Parser la date - peut être "10/10/2025, 14:30:25" ou "10/10/2025 14:30:25"
-                const dateStr = order.date.split(' ')[0]; // Prend juste la partie date "10/10/2025"
-                const parts = dateStr.split('/'); // ["10", "10", "2025"]
-                
-                // Créer la date : année, mois (0-indexé), jour
+                const dateStr = order.date.split(' ')[0];
+                const parts = dateStr.split('/');
                 const orderDate = new Date(parts[2], parts[1] - 1, parts[0]);
-                
-                console.log('Commande date:', order.date, '→', orderDate);
-                console.log('Dans la période?', orderDate >= start && orderDate <= end);
                 
                 return orderDate >= start && orderDate <= end;
             });
-
-            console.log('Commandes filtrées:', filteredOrders.length);
 
             if (filteredOrders.length === 0) {
                 document.getElementById('statsResults').classList.add('hidden');
@@ -431,10 +428,12 @@
 
             const drinkStats = {};
             let totalRevenue = 0;
+            let totalDrinks = 0;
 
             filteredOrders.forEach(order => {
                 totalRevenue += order.total;
                 order.items.forEach(item => {
+                    totalDrinks++;
                     if (!drinkStats[item.name]) {
                         drinkStats[item.name] = {
                             count: 0,
@@ -449,6 +448,7 @@
             document.getElementById('statsEmpty').classList.add('hidden');
             document.getElementById('statsResults').classList.remove('hidden');
             document.getElementById('statsOrderCount').textContent = filteredOrders.length;
+            document.getElementById('statsDrinkCount').textContent = totalDrinks;
             document.getElementById('statsRevenue').textContent = formatPrice(totalRevenue);
 
             const sortedDrinks = Object.entries(drinkStats).sort((a, b) => b[1].count - a[1].count);
