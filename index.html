@@ -108,6 +108,19 @@
                             <span id="totalAmount" class="text-indigo-600">0.00 €</span>
                         </div>
                         <div class="mb-4">
+                            <label class="block text-gray-700 font-semibold mb-2">🏷️ Réduction</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="discountAmount" step="0.01" placeholder="0.00" class="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg" title="Montant fixe">
+                                <input type="number" id="discountPercent" step="0.01" min="0" max="100" placeholder="0" class="w-20 px-4 py-2 border-2 border-gray-200 rounded-lg" title="Pourcentage">
+                                <span class="px-3 py-2 bg-gray-100 rounded-lg">%</span>
+                            </div>
+                            <p id="discountDisplay" class="text-sm text-gray-600 mt-2 hidden">Réduction: <span id="discountValue">0.00</span> €</p>
+                        </div>
+                        <div class="flex justify-between items-center mb-4 text-lg font-semibold text-green-600" id="finalTotalSection" style="display: none;">
+                            <span>Total après réduction</span>
+                            <span id="finalTotal">0.00 €</span>
+                        </div>
+                        <div class="mb-4">
                             <label class="block text-gray-700 font-semibold mb-2">💰 Montant payé</label>
                             <input type="number" id="amountPaid" step="0.01" placeholder="0.00" class="w-full px-4 py-3 text-xl border-2 border-indigo-200 rounded-lg">
                         </div>
@@ -243,6 +256,7 @@
         let stockItems = JSON.parse(localStorage.getItem('stockItems')) || [];
         let checklistItems = JSON.parse(localStorage.getItem('checklistItems')) || [];
         let sortModeEnabled = false;
+        let currentDiscount = { amount: 0, percent: 0 };
 
         function saveData() {
             localStorage.setItem('drinks', JSON.stringify(drinks));
@@ -279,7 +293,7 @@
                     grouped[dateKey] = { orders: [], total: 0 };
                 }
                 grouped[dateKey].orders.push(order);
-                grouped[dateKey].total += order.total;
+                grouped[dateKey].total += (order.finalTotal || order.total);
             });
             return grouped;
         }
@@ -381,12 +395,52 @@
             updatePayment();
         }
 
+        function updateDiscount() {
+            const total = calculateTotal();
+            const discountAmount = parseFloat(document.getElementById('discountAmount').value) || 0;
+            const discountPercent = parseFloat(document.getElementById('discountPercent').value) || 0;
+
+            let totalDiscount = discountAmount;
+            if (discountPercent > 0) {
+                totalDiscount += total * (discountPercent / 100);
+            }
+
+            currentDiscount = { amount: discountAmount, percent: discountPercent };
+
+            const discountDisplay = document.getElementById('discountDisplay');
+            const discountValue = document.getElementById('discountValue');
+            const finalTotalSection = document.getElementById('finalTotalSection');
+            const finalTotal = document.getElementById('finalTotal');
+
+            if (totalDiscount > 0) {
+                discountDisplay.classList.remove('hidden');
+                discountValue.textContent = formatPrice(totalDiscount);
+                finalTotalSection.style.display = 'flex';
+                finalTotal.textContent = formatPrice(Math.max(0, total - totalDiscount));
+            } else {
+                discountDisplay.classList.add('hidden');
+                finalTotalSection.style.display = 'none';
+            }
+
+            updatePayment();
+        }
+
         function updatePayment() {
             const total = calculateTotal();
+            const discountAmount = parseFloat(document.getElementById('discountAmount').value) || 0;
+            const discountPercent = parseFloat(document.getElementById('discountPercent').value) || 0;
+
+            let totalDiscount = discountAmount;
+            if (discountPercent > 0) {
+                totalDiscount += total * (discountPercent / 100);
+            }
+
+            const finalTotal = Math.max(0, total - totalDiscount);
             const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
-            const change = paid - total;
+            const change = paid - finalTotal;
             const changeDiv = document.getElementById('changeAmount');
             const btnValidate = document.getElementById('btnValidate');
+
             if (paid > 0) {
                 changeDiv.classList.remove('hidden');
                 if (change >= 0) {
@@ -399,7 +453,7 @@
             } else {
                 changeDiv.classList.add('hidden');
             }
-            if (paid >= total && cart.length > 0) {
+            if (paid >= finalTotal && cart.length > 0) {
                 btnValidate.classList.remove('hidden');
             } else {
                 btnValidate.classList.add('hidden');
@@ -446,7 +500,7 @@
                                                 <p class="text-xs text-gray-400">Commande #${order.id}</p>
                                             </div>
                                             <div class="flex items-center gap-3">
-                                                <p class="text-lg font-bold text-indigo-600">${formatPrice(order.total)}</p>
+                                                <p class="text-lg font-bold text-indigo-600">${formatPrice(order.finalTotal || order.total)}</p>
                                                 <button onclick="deleteOrder(${order.id})" class="text-red-500 hover:text-red-700 transition p-1">🗑️</button>
                                             </div>
                                         </div>
@@ -462,6 +516,20 @@
                                             `).join('')}
                                         </div>
                                         <div class="border-t pt-2 text-sm space-y-1">
+                                            ${order.discount && order.discount.total > 0 ? `
+                                                <div class="flex justify-between text-orange-600">
+                                                    <span>Sous-total :</span>
+                                                    <span class="font-semibold">${formatPrice(order.total)}</span>
+                                                </div>
+                                                <div class="flex justify-between text-orange-600">
+                                                    <span>Réduction :</span>
+                                                    <span class="font-semibold">-${formatPrice(order.discount.total)}</span>
+                                                </div>
+                                                <div class="flex justify-between font-semibold text-indigo-600">
+                                                    <span>Total :</span>
+                                                    <span>${formatPrice(order.finalTotal || order.total)}</span>
+                                                </div>
+                                            ` : ''}
                                             <div class="flex justify-between text-gray-600">
                                                 <span>Payé :</span>
                                                 <span class="font-semibold">${formatPrice(order.paid)}</span>
@@ -509,7 +577,7 @@
             let totalRevenue = 0;
             let totalDrinks = 0;
             filteredOrders.forEach(order => {
-                totalRevenue += order.total;
+                totalRevenue += (order.finalTotal || order.total);
                 order.items.forEach(item => {
                     const quantity = item.quantity || 1;
                     totalDrinks += quantity;
@@ -702,13 +770,29 @@
 
         function validateOrder() {
             const total = calculateTotal();
+            const discountAmount = parseFloat(document.getElementById('discountAmount').value) || 0;
+            const discountPercent = parseFloat(document.getElementById('discountPercent').value) || 0;
+
+            let totalDiscount = discountAmount;
+            if (discountPercent > 0) {
+                totalDiscount += total * (discountPercent / 100);
+            }
+
+            const finalTotal = Math.max(0, total - totalDiscount);
             const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
-            const change = paid - total;
-            if (cart.length > 0 && paid >= total) {
+            const change = paid - finalTotal;
+
+            if (cart.length > 0 && paid >= finalTotal) {
                 const order = {
                     id: Date.now(),
                     items: [...cart],
                     total: total,
+                    discount: {
+                        amount: discountAmount,
+                        percent: discountPercent,
+                        total: totalDiscount
+                    },
+                    finalTotal: finalTotal,
                     paid: paid,
                     change: change,
                     date: new Date().toLocaleString('fr-FR')
@@ -716,9 +800,16 @@
                 orderHistory.unshift(order);
                 saveData();
                 clearCart();
+                clearDiscount();
                 renderHistory();
                 alert('Commande validée ! ✅');
             }
+        }
+
+        function clearDiscount() {
+            document.getElementById('discountAmount').value = '';
+            document.getElementById('discountPercent').value = '';
+            updateDiscount();
         }
 
         function deleteOrder(orderId) {
@@ -909,6 +1000,8 @@
             document.getElementById('btnClearCart').addEventListener('click', clearCart);
             document.getElementById('btnValidate').addEventListener('click', validateOrder);
             document.getElementById('amountPaid').addEventListener('input', updatePayment);
+            document.getElementById('discountAmount').addEventListener('input', updateDiscount);
+            document.getElementById('discountPercent').addEventListener('input', updateDiscount);
             document.getElementById('btnCalculateStats').addEventListener('click', calculateStats);
 
             renderMaCarte();
