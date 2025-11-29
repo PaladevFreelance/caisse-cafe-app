@@ -46,20 +46,48 @@
         <!-- Vue Commande -->
         <div id="orderView" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white rounded-xl shadow-lg p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-semibold text-gray-800">Mes Boissons</h2>
-                    <button id="btnShowAdd" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-                        ➕ Ajouter
+                <!-- Onglets -->
+                <div class="flex gap-2 mb-6 border-b-2 border-gray-200 justify-between items-center">
+                    <div class="flex gap-2">
+                        <button id="tabMaCarte" class="px-4 py-3 font-semibold text-indigo-600 border-b-2 border-indigo-600 transition">
+                            🎯 Ma Carte
+                        </button>
+                        <button id="tabMesBoissons" class="px-4 py-3 font-semibold text-gray-600 border-b-2 border-transparent hover:text-gray-800 transition">
+                            🥤 Mes Boissons
+                        </button>
+                    </div>
+                    <button id="btnToggleSortMode" class="px-4 py-2 rounded-lg font-semibold transition text-sm bg-gray-200 text-gray-700 hover:bg-gray-300">
+                        🔄 Mode tri
                     </button>
                 </div>
-                <div id="addDrinkForm" class="mb-6 p-4 bg-indigo-50 rounded-lg hidden">
-                    <input type="text" id="drinkName" placeholder="Nom de la boisson" class="w-full px-3 py-2 border border-indigo-200 rounded-lg mb-2">
-                    <input type="number" id="drinkPrice" step="0.01" placeholder="Prix (€)" class="w-full px-3 py-2 border border-indigo-200 rounded-lg mb-2">
-                    <button id="btnAddDrink" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
-                        Confirmer
-                    </button>
+
+                <!-- Contenu Ma Carte -->
+                <div id="maCarteContent">
+                    <div id="mapEmpty" class="text-center py-12 text-gray-400">
+                        <div style="font-size: 48px; opacity: 0.3; margin-bottom: 16px">🗒️</div>
+                        <p>Votre carte est vide</p>
+                        <p class="text-sm mt-2">Allez dans "Mes Boissons" pour ajouter des articles</p>
+                    </div>
+                    <div id="mapList" class="space-y-2 max-h-96 overflow-y-auto hidden"></div>
                 </div>
-                <div id="drinksList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+
+                <!-- Contenu Mes Boissons -->
+                <div id="mesBoisonsContent" class="hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold text-gray-800">Toutes mes boissons</h3>
+                        <button id="btnShowAdd" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                            ➕ Ajouter
+                        </button>
+                    </div>
+                    <div id="addDrinkForm" class="mb-6 p-4 bg-indigo-50 rounded-lg hidden">
+                        <input type="text" id="drinkName" placeholder="Nom de la boisson" class="w-full px-3 py-2 border border-indigo-200 rounded-lg mb-2">
+                        <input type="number" id="drinkPrice" step="0.01" placeholder="Prix (€)" class="w-full px-3 py-2 border border-indigo-200 rounded-lg mb-2">
+                        <button id="btnAddDrink" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                            Confirmer
+                        </button>
+                    </div>
+                    <div id="drinksList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                </div>
             </div>
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex justify-between items-center mb-6">
@@ -209,13 +237,16 @@
             { id: 2, name: 'Eau', price: 1.50 },
             { id: 3, name: "Jus d'orange", price: 3.00 }
         ];
+        let drinkMap = JSON.parse(localStorage.getItem('drinkMap')) || [];
         let cart = [];
         let orderHistory = JSON.parse(localStorage.getItem('orderHistory')) || [];
         let stockItems = JSON.parse(localStorage.getItem('stockItems')) || [];
         let checklistItems = JSON.parse(localStorage.getItem('checklistItems')) || [];
+        let sortModeEnabled = false;
 
         function saveData() {
             localStorage.setItem('drinks', JSON.stringify(drinks));
+            localStorage.setItem('drinkMap', JSON.stringify(drinkMap));
             localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
             localStorage.setItem('stockItems', JSON.stringify(stockItems));
             localStorage.setItem('checklistItems', JSON.stringify(checklistItems));
@@ -226,7 +257,7 @@
         }
 
         function calculateTotal() {
-            return cart.reduce((sum, item) => sum + item.price, 0);
+            return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         }
 
         function calculateTotalSales() {
@@ -266,9 +297,17 @@
             }
         }
 
-        function renderDrinks() {
-            const list = document.getElementById('drinksList');
-            list.innerHTML = drinks.map(drink => `
+        function renderMaCarte() {
+            const mapEmpty = document.getElementById('mapEmpty');
+            const mapList = document.getElementById('mapList');
+            if (drinkMap.length === 0) {
+                mapEmpty.classList.remove('hidden');
+                mapList.classList.add('hidden');
+                return;
+            }
+            mapEmpty.classList.add('hidden');
+            mapList.classList.remove('hidden');
+            mapList.innerHTML = drinkMap.map((drink, index) => `
                 <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
                     <div class="flex-1">
                         <p class="font-semibold text-gray-800">${drink.name}</p>
@@ -276,10 +315,37 @@
                     </div>
                     <div class="flex gap-2">
                         <button onclick="addToCart(${drink.id})" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Ajouter</button>
-                        <button onclick="removeDrink(${drink.id})" class="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition">🗑️</button>
+                        ${sortModeEnabled ? `
+                            ${index > 0 ? `<button onclick="moveDrinkInMap(${drink.id}, 'up')" class="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition">↑</button>` : '<div class="w-10"></div>'}
+                            ${index < drinkMap.length - 1 ? `<button onclick="moveDrinkInMap(${drink.id}, 'down')" class="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition">↓</button>` : '<div class="w-10"></div>'}
+                        ` : ''}
+                        <button onclick="removeFromMap(${drink.id})" class="bg-orange-500 text-white p-2 rounded-lg hover:bg-orange-600 transition">−</button>
                     </div>
                 </div>
             `).join('');
+        }
+
+        function renderDrinks() {
+            const list = document.getElementById('drinksList');
+            list.innerHTML = drinks.map((drink, index) => {
+                const isInMap = drinkMap.some(d => d.id === drink.id);
+                return `
+                    <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800">${drink.name}</p>
+                            <p class="text-indigo-600 font-bold">${formatPrice(drink.price)}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            ${isInMap ? `<button onclick="removeFromMap(${drink.id})" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">✓ Dans carte</button>` : `<button onclick="addToMap(${drink.id})" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">➕ Carte</button>`}
+                            ${sortModeEnabled ? `
+                                ${index > 0 ? `<button onclick="moveDrinkInList(${drink.id}, 'up')" class="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition">↑</button>` : '<div class="w-10"></div>'}
+                                ${index < drinks.length - 1 ? `<button onclick="moveDrinkInList(${drink.id}, 'down')" class="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition">↓</button>` : '<div class="w-10"></div>'}
+                            ` : ''}
+                            <button onclick="removeDrink(${drink.id})" class="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function renderCart() {
@@ -299,10 +365,15 @@
             const cartItems = document.getElementById('cartItems');
             cartItems.innerHTML = cart.map(item => `
                 <div class="flex justify-between items-center p-3 bg-indigo-50 rounded-lg">
-                    <span class="font-medium text-gray-800">${item.name}</span>
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold text-indigo-600">${formatPrice(item.price)}</span>
-                        <button onclick="removeFromCart(${item.cartId})" class="text-red-500 hover:text-red-700 transition">🗑️</button>
+                    <div class="flex-1">
+                        <span class="font-medium text-gray-800">${item.name}</span>
+                        <p class="text-sm text-gray-600">${formatPrice(item.price)} × ${item.quantity}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="adjustQuantity(${item.id}, -1)" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition text-sm">−</button>
+                        <span class="font-bold text-indigo-600 min-w-12 text-center">${formatPrice(item.price * item.quantity)}</span>
+                        <button onclick="adjustQuantity(${item.id}, 1)" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition text-sm">+</button>
+                        <button onclick="removeFromCart(${item.id})" class="text-red-500 hover:text-red-700 transition ml-2">🗑️</button>
                     </div>
                 </div>
             `).join('');
@@ -382,8 +453,11 @@
                                         <div class="space-y-1 mb-2">
                                             ${order.items.map(item => `
                                                 <div class="flex justify-between text-sm bg-gray-50 p-2 rounded">
-                                                    <span class="text-gray-700">${item.name}</span>
-                                                    <span class="font-semibold text-gray-800">${formatPrice(item.price)}</span>
+                                                    <div class="flex-1">
+                                                        <span class="text-gray-700">${item.name}</span>
+                                                        <p class="text-xs text-gray-600">${formatPrice(item.price)} × ${item.quantity || 1}</p>
+                                                    </div>
+                                                    <span class="font-semibold text-gray-800">${formatPrice(item.price * (item.quantity || 1))}</span>
                                                 </div>
                                             `).join('')}
                                         </div>
@@ -437,12 +511,13 @@
             filteredOrders.forEach(order => {
                 totalRevenue += order.total;
                 order.items.forEach(item => {
-                    totalDrinks++;
+                    const quantity = item.quantity || 1;
+                    totalDrinks += quantity;
                     if (!drinkStats[item.name]) {
                         drinkStats[item.name] = { count: 0, revenue: 0 };
                     }
-                    drinkStats[item.name].count++;
-                    drinkStats[item.name].revenue += item.price;
+                    drinkStats[item.name].count += quantity;
+                    drinkStats[item.name].revenue += item.price * quantity;
                 });
             });
             document.getElementById('statsEmpty').classList.add('hidden');
@@ -530,17 +605,84 @@
             `).join('');
         }
 
+        function addToMap(drinkId) {
+            const drink = drinks.find(d => d.id === drinkId);
+            if (drink && !drinkMap.some(d => d.id === drinkId)) {
+                drinkMap.push(drink);
+                saveData();
+                renderMaCarte();
+                renderDrinks();
+            }
+        }
+
+        function removeFromMap(drinkId) {
+            const drink = drinkMap.find(d => d.id === drinkId);
+            if (drink && confirm(`Voulez-vous vraiment retirer "${drink.name}" de votre carte ?`)) {
+                drinkMap = drinkMap.filter(d => d.id !== drinkId);
+                saveData();
+                renderMaCarte();
+                renderDrinks();
+            }
+        }
+
         function addToCart(drinkId) {
             const drink = drinks.find(d => d.id === drinkId);
             if (drink) {
-                cart.push({ ...drink, cartId: Date.now() });
+                const existingItem = cart.find(item => item.id === drinkId);
+                if (existingItem) {
+                    existingItem.quantity++;
+                } else {
+                    cart.push({ ...drink, quantity: 1 });
+                }
                 renderCart();
             }
         }
 
-        function removeFromCart(cartId) {
-            cart = cart.filter(item => item.cartId !== cartId);
+        function removeFromCart(drinkId) {
+            cart = cart.filter(item => item.id !== drinkId);
             renderCart();
+        }
+
+        function adjustQuantity(drinkId, delta) {
+            const item = cart.find(item => item.id === drinkId);
+            if (item) {
+                item.quantity += delta;
+                if (item.quantity <= 0) {
+                    removeFromCart(drinkId);
+                } else {
+                    renderCart();
+                }
+            }
+        }
+
+        function moveDrinkInMap(drinkId, direction) {
+            const index = drinkMap.findIndex(d => d.id === drinkId);
+            if (index === -1) return;
+
+            if (direction === 'up' && index > 0) {
+                [drinkMap[index - 1], drinkMap[index]] = [drinkMap[index], drinkMap[index - 1]];
+                saveData();
+                renderMaCarte();
+            } else if (direction === 'down' && index < drinkMap.length - 1) {
+                [drinkMap[index + 1], drinkMap[index]] = [drinkMap[index], drinkMap[index + 1]];
+                saveData();
+                renderMaCarte();
+            }
+        }
+
+        function moveDrinkInList(drinkId, direction) {
+            const index = drinks.findIndex(d => d.id === drinkId);
+            if (index === -1) return;
+
+            if (direction === 'up' && index > 0) {
+                [drinks[index - 1], drinks[index]] = [drinks[index], drinks[index - 1]];
+                saveData();
+                renderDrinks();
+            } else if (direction === 'down' && index < drinks.length - 1) {
+                [drinks[index + 1], drinks[index]] = [drinks[index], drinks[index + 1]];
+                saveData();
+                renderDrinks();
+            }
         }
 
         function removeDrink(drinkId) {
@@ -670,13 +812,48 @@
             renderChecklist();
         }
 
+        function switchTab(tabName) {
+            const maCarteContent = document.getElementById('maCarteContent');
+            const mesBoisonsContent = document.getElementById('mesBoisonsContent');
+            const tabMaCarte = document.getElementById('tabMaCarte');
+            const tabMesBoissons = document.getElementById('tabMesBoissons');
+
+            if (tabName === 'maCarte') {
+                maCarteContent.classList.remove('hidden');
+                mesBoisonsContent.classList.add('hidden');
+                tabMaCarte.className = 'px-4 py-3 font-semibold text-indigo-600 border-b-2 border-indigo-600 transition';
+                tabMesBoissons.className = 'px-4 py-3 font-semibold text-gray-600 border-b-2 border-transparent hover:text-gray-800 transition';
+            } else {
+                maCarteContent.classList.add('hidden');
+                mesBoisonsContent.classList.remove('hidden');
+                tabMaCarte.className = 'px-4 py-3 font-semibold text-gray-600 border-b-2 border-transparent hover:text-gray-800 transition';
+                tabMesBoissons.className = 'px-4 py-3 font-semibold text-indigo-600 border-b-2 border-indigo-600 transition';
+            }
+        }
+
+        function toggleSortMode() {
+            sortModeEnabled = !sortModeEnabled;
+            const btn = document.getElementById('btnToggleSortMode');
+            if (sortModeEnabled) {
+                btn.className = 'px-4 py-2 rounded-lg font-semibold transition text-sm bg-indigo-600 text-white hover:bg-indigo-700';
+            } else {
+                btn.className = 'px-4 py-2 rounded-lg font-semibold transition text-sm bg-gray-200 text-gray-700 hover:bg-gray-300';
+            }
+            renderMaCarte();
+            renderDrinks();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('btnOrder').addEventListener('click', showOrderView);
             document.getElementById('btnHistory').addEventListener('click', showHistoryView);
             document.getElementById('btnStats').addEventListener('click', showStatsView);
             document.getElementById('btnStock').addEventListener('click', showStockView);
             document.getElementById('btnChecklist').addEventListener('click', showChecklistView);
-            
+
+            document.getElementById('tabMaCarte').addEventListener('click', () => switchTab('maCarte'));
+            document.getElementById('tabMesBoissons').addEventListener('click', () => switchTab('mesBoissons'));
+            document.getElementById('btnToggleSortMode').addEventListener('click', toggleSortMode);
+
             document.getElementById('btnShowAdd').addEventListener('click', function() {
                 document.getElementById('addDrinkForm').classList.toggle('hidden');
             });
@@ -734,6 +911,7 @@
             document.getElementById('amountPaid').addEventListener('input', updatePayment);
             document.getElementById('btnCalculateStats').addEventListener('click', calculateStats);
 
+            renderMaCarte();
             renderDrinks();
             renderCart();
             renderHistory();
